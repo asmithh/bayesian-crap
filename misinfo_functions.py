@@ -21,30 +21,27 @@ def generate_params_dict():
     
     Returns a dict with all these parameters, chosen randomly from sets of appropriate values.
     """
-    B1_NTRUST = np.random.choice([1, 2, 3, 4, 5])
-    B2_NTRUST = np.random.choice([1, 2, 3, 4, 5])
-    FORCEFULNESS_START_LOW = np.log(np.random.uniform())
-    FORCEFULNESS_START_HIGH = np.log(1.0 - np.exp(FORCEFULNESS_START_LOW))
-    FORCEFULNESS_WT = np.random.choice([i for i in range(1, 100)])
-    SP_START_LOW = np.log(np.random.uniform())
-    SP_START_HIGH = np.log(1.0 - np.exp(SP_START_LOW))
-    SP_WT = np.random.choice([i for i in range(1, 100)])
-    MB_START_LOW = np.log(np.random.uniform())
-    MB_START_HIGH = np.log(1.0 - np.exp(MB_START_LOW))
-    MB_WT = np.random.choice([i for i in range(1, 100)])
-    B1_START_TS = np.random.choice([1, 2, 3, 4, 5])
-    B2_START_TS = np.random.choice([1, 2, 3, 4, 5])
+    B1_NTRUST = np.random.choice([i for i in range(1, 11)])
+    B2_NTRUST = np.random.choice([i for i in range(1, 11)])
+    B1_START_MB = np.random.choice([i for i in range(1, 11)])
+    B2_START_MB = np.random.choice([i for i in range(1, 11)])
+    B1_START_FO = np.random.choice([i for i in range(1, 11)])
+    B2_START_FO = np.random.choice([i for i in range(1, 11)])
+    B1_START_SP = np.random.choice([i for i in range(1, 11)])
+    B2_START_SP = np.random.choice([i for i in range(1, 11)])
+    B1_START_TS = np.random.choice([i for i in range(1, 11)])
+    B2_START_TS = np.random.choice([i for i in range(1, 11)])
     NTRUST_THRESHOLD = np.random.uniform()
     SP_THRESHOLD = np.random.uniform()
     return {
         "B1_NTRUST": B1_NTRUST,
         "B2_NTRUST": B2_NTRUST,
-        "FORCEFULNESS_START_LOW": FORCEFULNESS_START_LOW,
-        "FORCEFULNESS_WT": FORCEFULNESS_WT,
-        "SP_START_LOW": SP_START_LOW,
-        "SP_WT": SP_WT,
-        "MB_START_LOW": MB_START_LOW,
-        "MB_WT": MB_WT,
+        "B1_START_MB": B1_START_MB,
+        "B2_START_MB": B2_START_MB,
+        "B1_START_FO": B1_START_FO,
+        "B2_START_FO": B2_START_FO,
+        "B1_START_SP": B1_START_SP,
+        "B2_START_SP": B2_START_SP,
         "B1_START_TS": B1_START_TS,
         "B2_START_TS": B2_START_TS,
         "NTRUST_THRESHOLD": NTRUST_THRESHOLD,
@@ -59,16 +56,16 @@ def generate_params_dict():
 # in the next simulated annealing step.
 
 PARAMS_MAX = {
-    "B1_NTRUST": 5,
-    "B2_NTRUST": 5,
-    "FORCEFULNESS_START_LOW": 1.0,
-    "FORCEFULNESS_WT": 100,
-    "SP_START_LOW": 1.0,
-    "SP_WT": 100,
-    "MB_START_LOW": 1.0,
-    "MB_WT": 100,
-    "B1_START_TS": 5,
-    "B2_START_TS": 5,
+    "B1_NTRUST": 10,
+    "B2_NTRUST": 10,
+    "B1_START_FO": 10,
+    "B2_START_FO": 10,
+    "B1_START_SP": 10,
+    "B2_START_SP": 10,
+    "B1_START_MB": 10,
+    "B2_START_MB": 10,
+    "B1_START_TS": 10,
+    "B2_START_TS": 10,
     "NTRUST_THRESHOLD": 1.0,
     "SP_THRESHOLD": 1.0,
 }
@@ -76,12 +73,12 @@ PARAMS_MAX = {
 PARAMS_MIN = {
     "B1_NTRUST": 1,
     "B2_NTRUST": 1,
-    "FORCEFULNESS_START_LOW": 0.000001,
-    "FORCEFULNESS_WT": 1,
-    "SP_START_LOW": 0.000001,
-    "SP_WT": 1,
-    "MB_START_LOW": 0.000001,
-    "MB_WT": 1,
+    "B1_START_FO": 1,
+    "B2_START_FO": 1,
+    "B1_START_SP": 1,
+    "B2_START_SP": 1,
+    "B1_START_MB": 1,
+    "B2_START_MB": 1,
     "B1_START_TS": 1,
     "B2_START_TS": 1,
     "NTRUST_THRESHOLD": 0.00001,
@@ -91,12 +88,12 @@ PARAMS_MIN = {
 PARAMS_STEP = {
     "B1_NTRUST": 1,
     "B2_NTRUST": 1,
-    "FORCEFULNESS_START_LOW": 0.05,
-    "FORCEFULNESS_WT": 1,
-    "SP_START_LOW": 0.05,
-    "SP_WT": 1,
-    "MB_START_LOW": 0.05,
-    "MB_WT": 1,
+    "B1_START_FO": 1,
+    "B2_START_FO": 1,
+    "B1_START_SP": 1,
+    "B2_START_SP": 1,
+    "B1_START_MB": 1,
+    "B2_START_MB": 1,
     "B1_START_TS": 1,
     "B2_START_TS": 1,
     "NTRUST_THRESHOLD": 0.05,
@@ -121,8 +118,14 @@ def step_params_dict(params_dict):
         "SP_THRESHOLD",
         "B1_NTRUST",
         "B2_NTRUST",
-        "FORCEFULNESS_WT",
-        "SP_WT",
+        "B1_START_FO",
+        "B2_START_FO",
+        "B1_START_SP",
+        "B2_START_SP",
+        "B1_START_MB",
+        "B2_START_MB",
+        "B1_START_TS",
+        "B2_START_TS",
         "MB_WT",
         "B1_START_TS",
         "B2_START_TS",
@@ -191,7 +194,6 @@ def calc_energy(agents, shares, time_step, tot_time_steps, centrality):
         how_much_shared_by_top_one_percent_model - how_much_shared_by_top_one_percent_gt
     ) ** 2.0
     was_anything_shared = np.sum(shared)
-    print(was_anything_shared)
     return (
         5000 * top_misinfo_share_loss - was_anything_shared + more_central_more_misinfo
     )

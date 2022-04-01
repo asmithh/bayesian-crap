@@ -1,4 +1,4 @@
-class misinfoAgent(bayesianAgent):
+class misinfoAgent(object):
     """
     Agent in a network that may or may not spread misinfo.
     Has parameters:

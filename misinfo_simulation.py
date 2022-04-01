@@ -29,27 +29,15 @@ def run_agent_simulation(N_AGENTS, params_dict):
         agent = misinfoAgent(
             agent_id=i,
             neighbors={},
-            forcefulness=random.choices(
-                [
-                    params_dict["FORCEFULNESS_START_LOW"],
-                    np.log(1.0 - np.exp(params_dict["FORCEFULNESS_START_LOW"])),
-                ],
-                weights=[params_dict["FORCEFULNESS_WT"], 1],
-            )[0],
-            share_propensity=random.choices(
-                [
-                    params_dict["SP_START_LOW"],
-                    np.log(1.0 - np.exp(params_dict["SP_START_LOW"])),
-                ],
-                weights=[params_dict["SP_WT"], 1],
-            )[0],
-            misinfo_belief=random.choices(
-                [
-                    params_dict["MB_START_LOW"],
-                    np.log(1.0 - np.exp(params_dict["MB_START_LOW"])),
-                ],
-                weights=[params_dict["MB_WT"], 1],
-            )[0],
+            forcefulness=np.log(
+                np.random.beta(params_dict["B1_START_FO"], params_dict["B2_START_FO"])
+            ),
+            share_propensity=np.log(
+                np.random.beta(params_dict["B1_START_SP"], params_dict["B2_START_SP"])
+            ),
+            misinfo_belief=np.log(
+                np.random.beta(params_dict["B1_START_MB"], params_dict["B2_START_MB"])
+            ),
             trust_stability=np.log(
                 np.random.beta(params_dict["B1_START_TS"], params_dict["B2_START_TS"])
             ),
@@ -69,7 +57,7 @@ def run_agent_simulation(N_AGENTS, params_dict):
     # from multiprocessing import Pool
     # pool = Pool(8)
 
-    for time_step in range(100):
+    for time_step in range(250):
         for agent in agents:
             agent_records[agent.agent_id][time_step] = {
                 "neighbor_trust": agent.neighbors,
@@ -98,11 +86,11 @@ def run_agent_simulation(N_AGENTS, params_dict):
     return agents, shares, centrality
 
 
-N_AGENTS = 100
+N_AGENTS = 250
 SA_STEPS = 250
 rnd_info = []
 
-for rnd in range(100):
+for rnd in range(1000):
     print(rnd)
     energy = []
     params_dict_old = generate_params_dict()
