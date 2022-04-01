@@ -14,7 +14,7 @@ from misinfo_functions import (
     make_agent_info_dict,
     update_agent_info,
 )
-from utilities import markov_update_log, make_configuration_model_graph
+from utilities import markov_update_log, make_powerlaw_cluster_graph, make_er_graph, make_configuration_model_graph
 
 
 def run_agent_simulation(N_AGENTS, params_dict):
@@ -45,8 +45,9 @@ def run_agent_simulation(N_AGENTS, params_dict):
         )
         agents.append(agent)
 
-    # G, agents = make_er_graph(0.05, N_AGENTS, agents)
-    G, agents = make_configuration_model_graph(N_AGENTS, 2.5, agents, params_dict)
+    # G, agents = make_er_graph(0.05, N_AGENTS, agents, params_dict)
+    # G, agents = make_configuration_model_graph(N_AGENTS, 2.5, agents, params_dict)
+    G, agents = make_powerlaw_cluster_graph(N_AGENTS, agents, 0.05)
     centrality = sorted(
         [(k, v) for k, v in nx.closeness_centrality(G).items()], key=lambda b: b[0]
     )
@@ -166,10 +167,10 @@ while True:
         ensemble_E[chosen_one] = (proposal, u_star)
 
     EPSILON = t ** (0.1)
-    if t % 10 == 0:
-        print(swap_rate / tries)
     if t % 100 == 0:
-        pickle.dump(ensemble_E, open('ensemble_E_{}.pkl'.format(str(t)), 'wb'))
+        print(swap_rate / tries)
+    if t % 1000 == 0:
+        pickle.dump(ensemble_E, open('ensemble_E_pwrlaw_cluster_{}.pkl'.format(str(t)), 'wb'))
     t += 1
     if (swap_rate / tries) < 0.05 and tries > 20:
         break

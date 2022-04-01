@@ -59,6 +59,12 @@ def make_configuration_model_graph(N_AGENTS, alpha, agents, params_dict):
     return G, agents
 
 
+def make_powerlaw_cluster_graph(N_AGENTS, agents, p=0.05):
+    m = int(N_AGENTS / 50)
+    G = nx.powerlaw_cluster_graph(N_AGENTS, m, p)
+    return G, agents
+
+
 def markov_update_log(quantity, threshold, step, proba_decrease):
     """
     MCMC updater. Given a quantity (log), a threshold over which we choose to update,
