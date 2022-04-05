@@ -131,15 +131,15 @@ def G_func(my_ensemble_P, x):
     return np.sum(candidates) / normalizer
             
 
-N_AGENTS = 50
-ALPHA = 2.5
-EPSILON_INIT = 0.5
+N_AGENTS = 100
+ALPHA = 2.3
+EPSILON_INIT = 0.3
 rnd_info = []
 
 ensemble_P = []
 ensemble_E = []
 
-while len(ensemble_E) < 100:
+while len(ensemble_E) < 250:
     if len(ensemble_E) % 5 == 0 and len(ensemble_E) != 0:
         print(len(ensemble_E))
     params_dict = generate_params_dict()
@@ -157,18 +157,17 @@ U = np.mean(G_result)
 print('going')
 EPSILON = EPSILON_INIT
 K = np.ones((len(params_dict), len(params_dict)))
-K *= 0.1
+K *= 0.05
 for i in range(len(params_dict)):
     K[i, i] = 0.5
     if i % 2 == 0 and i < 10:
         K[i, i + 1] = 0.25
         K[i + 1, i] = 0.25
 
-N = np.trace(K) * 0.1
-BETA = 0.99
-LITTLE_S = 0.01
+BETA = 0.98
+LITTLE_S = 0.02
 U_CONST = 1.0 
-GAMMA_V_RATIO = 0.3
+GAMMA_V_RATIO = 0.2
 draws = []
 t = 1
 swap_rate = 0
@@ -198,5 +197,5 @@ while True:
     if t % 100 == 0 or t % 5 == 0 and t < 75:
         pickle.dump(ensemble_E, open('ensemble_E_{}_{}.pkl'.format(PICKLE_TITLE, str(t)), 'wb'))
     t += 1
-    if (swap_rate / tries) < 0.01 and tries > 20:
+    if (swap_rate / tries) < 0.001 and tries > 20:
         break
