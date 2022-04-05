@@ -22,6 +22,7 @@ def generate_params_dict():
     
     Returns a dict with all these parameters, chosen randomly from sets of appropriate values.
     """
+    # NOTE THAT THIS IS A UNIFORM PRIOR DISTRIBUTION!!!!!
     B1_NTRUST = 10 * np.random.uniform()
     B2_NTRUST = 10 * np.random.uniform()
     B1_START_MB = 10 * np.random.uniform()
@@ -49,27 +50,18 @@ def generate_params_dict():
         "SP_THRESHOLD": SP_THRESHOLD,
     }
 
-def loop_around(p, pmin, pmax):
-    if p < pmin:
-        p = pmin
-    elif p > pmax:
-        p = pmax
-    return p
 
 def markov_update_params_dict(d0, K):
     """
-    Generates global parameters for a misinfo spread simulation. 
-    neighbor trust is a beta distribution governed by {B1_NTRUST, B2_NTRUST}.
-    an agent's forcefulness is how much it can convince others & hold onto its beliefs.
-    forcefulness starts at one of two values, either FORCEFULNESS_START_LOW or its complement, FORCEFULNESS_START_HIGH..
-    the prevalence of values in the population is given by FORCEFULNESS_WT
-    SP_START_LOW is share propensity. Like forcefulness, it exists in ratio SP_WT: 1 in the population and starts at either SP_START_LOW or its complement.
-    MB_START_LOW is misinfo belief (behaves the same as share propensity & forcefulness)
-    Trust stability (how stable one's trust in institutions/misinfo is) is drawn from a beta distribution governed by {B1_START_TS, B2_START_TS}.
-    NTRUST_THRESHOLD is how much a person's neighbor has to be trusted by that person before they incorporate that person's beliefs into their own.
-    SP_THRESHOLD is the threshold over which a user's share propensity has to be in order to share misinfo.
-    
-    Returns a dict with all these parameters, chosen randomly from sets of appropriate values.
+    given a params dict d0 and a covariance matrix K (encompassing all vars in d0)
+    create a new vector d1 that is drawn from a probability dist that is multivariate normal
+    with d0's vector as the mean and K as the covariance matrix.
+    if any of the params are not in valid ranges, flags the vector for immediate rejection.
+
+    returns:
+        d1: dict with named parameters
+        new_vec: new vector w/ ordered params
+        reject: true only if any parameter is not in a valid range e.g. (0, 1) for probabilities
     """
     beta_dict_keys = ['B1_NTRUST', 'B2_NTRUST',
             'B1_START_FO', 'B2_START_FO',
@@ -259,6 +251,11 @@ def acceptance_proba(energy_curr, energy_new, time_step, tot_time_steps):
     else:
         return np.exp((energy_new - energy_curr) / (-1 * temp))
 
+
+# you'll want to change this function for your particular hate speech agents.
+# note that i'm doing some smoothing here for values that are input to log. 
+# this is because we don't want to input negative numbers, so instead we input something positive but very close to zero
+# if the input to the log would otherwise be negative.
 
 def update_agent_info(d):
     """
