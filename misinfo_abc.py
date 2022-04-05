@@ -165,10 +165,10 @@ for i in range(len(params_dict)):
         K[i + 1, i] = 0.25
 
 N = np.trace(K) * 0.1
-BETA = 0.95
-LITTLE_S = 0.05
+BETA = 0.99
+LITTLE_S = 0.01
 U_CONST = 1.0 
-GAMMA_V_RATIO = 0.2
+GAMMA_V_RATIO = 0.3
 draws = []
 t = 1
 swap_rate = 0
