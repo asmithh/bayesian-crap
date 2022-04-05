@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from sklearn.linear_model import LinearRegression
 
 from utilities import markov_update_log
@@ -21,16 +22,16 @@ def generate_params_dict():
     
     Returns a dict with all these parameters, chosen randomly from sets of appropriate values.
     """
-    B1_NTRUST = np.random.choice([i for i in range(1, 11)])
-    B2_NTRUST = np.random.choice([i for i in range(1, 11)])
-    B1_START_MB = np.random.choice([i for i in range(1, 11)])
-    B2_START_MB = np.random.choice([i for i in range(1, 11)])
-    B1_START_FO = np.random.choice([i for i in range(1, 11)])
-    B2_START_FO = np.random.choice([i for i in range(1, 11)])
-    B1_START_SP = np.random.choice([i for i in range(1, 11)])
-    B2_START_SP = np.random.choice([i for i in range(1, 11)])
-    B1_START_TS = np.random.choice([i for i in range(1, 11)])
-    B2_START_TS = np.random.choice([i for i in range(1, 11)])
+    B1_NTRUST = 10 * np.random.uniform()
+    B2_NTRUST = 10 * np.random.uniform()
+    B1_START_MB = 10 * np.random.uniform()
+    B2_START_MB = 10 * np.random.uniform()
+    B1_START_FO = 10 * np.random.uniform()
+    B2_START_FO = 10 * np.random.uniform()
+    B1_START_SP = 10 * np.random.uniform()
+    B2_START_SP = 10 * np.random.uniform()
+    B1_START_TS = 10 * np.random.uniform()
+    B2_START_TS = 10 * np.random.uniform()
     NTRUST_THRESHOLD = np.random.uniform()
     SP_THRESHOLD = np.random.uniform()
     return {
@@ -48,6 +49,46 @@ def generate_params_dict():
         "SP_THRESHOLD": SP_THRESHOLD,
     }
 
+def loop_around(p, pmin, pmax):
+    if p < pmin:
+        p = pmin
+    elif p > pmax:
+        p = pmax
+    return p
+
+def markov_update_params_dict(d0, K):
+    """
+    Generates global parameters for a misinfo spread simulation. 
+    neighbor trust is a beta distribution governed by {B1_NTRUST, B2_NTRUST}.
+    an agent's forcefulness is how much it can convince others & hold onto its beliefs.
+    forcefulness starts at one of two values, either FORCEFULNESS_START_LOW or its complement, FORCEFULNESS_START_HIGH..
+    the prevalence of values in the population is given by FORCEFULNESS_WT
+    SP_START_LOW is share propensity. Like forcefulness, it exists in ratio SP_WT: 1 in the population and starts at either SP_START_LOW or its complement.
+    MB_START_LOW is misinfo belief (behaves the same as share propensity & forcefulness)
+    Trust stability (how stable one's trust in institutions/misinfo is) is drawn from a beta distribution governed by {B1_START_TS, B2_START_TS}.
+    NTRUST_THRESHOLD is how much a person's neighbor has to be trusted by that person before they incorporate that person's beliefs into their own.
+    SP_THRESHOLD is the threshold over which a user's share propensity has to be in order to share misinfo.
+    
+    Returns a dict with all these parameters, chosen randomly from sets of appropriate values.
+    """
+    beta_dict_keys = ['B1_NTRUST', 'B2_NTRUST',
+            'B1_START_FO', 'B2_START_FO',
+            'B1_START_SP', 'B2_START_SP',
+            'B1_START_MB', 'B2_START_MB',
+            'B1_START_TS', 'B2_START_TS',
+    ]
+    others = ['NTRUST_THRESHOLD', 'SP_THRESHOLD']
+    d1 = {}
+    reject = False
+    new_vec = np.random.multivariate_normal([d0[k] for k in beta_dict_keys + others], K) 
+    d1 = {k: b for k, b in zip(beta_dict_keys + others, new_vec)}
+    for b in beta_dict_keys:
+        if d1[b] < 0 or d1[b] > 100:
+            reject = True
+    for b in others:
+        if d1[b] < 0 or d1[b] > 1.0:
+            reject = True
+    return d1, new_vec, reject
 
 # these spell out legal values for parameters.
 # they are not allowed to exceed values in PARAMS_MAX

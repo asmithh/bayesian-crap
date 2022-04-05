@@ -13,9 +13,14 @@ from misinfo_functions import (
     acceptance_proba,
     make_agent_info_dict,
     update_agent_info,
+    markov_update_params_dict,
 )
 from utilities import markov_update_log, make_powerlaw_cluster_graph, make_er_graph, make_configuration_model_graph
 
+import sys
+
+GRAPH_TYPE = sys.argv[1].strip()
+PICKLE_TITLE = sys.argv[2].strip()
 
 def run_agent_simulation(N_AGENTS, params_dict):
     """
@@ -44,10 +49,12 @@ def run_agent_simulation(N_AGENTS, params_dict):
             ),
         )
         agents.append(agent)
-
-    # G, agents = make_er_graph(0.05, N_AGENTS, agents, params_dict)
-    # G, agents = make_configuration_model_graph(N_AGENTS, 2.5, agents, params_dict)
-    G, agents = make_powerlaw_cluster_graph(N_AGENTS, agents, 0.05)
+    if GRAPH_TYPE == 'er':
+        G, agents = make_er_graph(0.05, N_AGENTS, agents, params_dict)
+    elif GRAPH_TYPE == 'config':
+        G, agents = make_configuration_model_graph(N_AGENTS, 2.5, agents, params_dict)
+    elif GRAPH_TYPE == 'pwrlaw':
+        G, agents = make_powerlaw_cluster_graph(N_AGENTS, agents, 0.05)
     centrality = sorted(
         [(k, v) for k, v in nx.closeness_centrality(G).items()], key=lambda b: b[0]
     )
@@ -119,11 +126,12 @@ def p_x_y(agents, shares, centrality, alpha):
 def G_func(my_ensemble_P, x):
     # make fancier later? right now assumes constant prior (the horror)
     constant_proba = np.log(0.1) * 10 + np.log(0.01) * 2
+    normalizer = len(my_ensemble_P) * np.exp(constant_proba)
     candidates = [np.exp(constant_proba) for tup in my_ensemble_P if tup[1] <= x]
-    return np.sum(candidates)
+    return np.sum(candidates) / normalizer
             
 
-N_AGENTS = 200
+N_AGENTS = 50
 ALPHA = 2.5
 EPSILON_INIT = 0.5
 rnd_info = []
@@ -131,7 +139,7 @@ rnd_info = []
 ensemble_P = []
 ensemble_E = []
 
-while len(ensemble_E) < 200:
+while len(ensemble_E) < 100:
     if len(ensemble_E) % 5 == 0 and len(ensemble_E) != 0:
         print(len(ensemble_E))
     params_dict = generate_params_dict()
@@ -146,31 +154,49 @@ while len(ensemble_E) < 200:
 G_result = [G_func(ensemble_P, tup[1]) for tup in ensemble_P]
 ensemble_E = [(tup[0], G_func(ensemble_P, tup[1])) for tup in ensemble_E]
 U = np.mean(G_result)
-
+print('going')
 EPSILON = EPSILON_INIT
+K = np.ones((len(params_dict), len(params_dict)))
+K *= 0.1
+for i in range(len(params_dict)):
+    K[i, i] = 0.5
+    if i % 2 == 0 and i < 10:
+        K[i, i + 1] = 0.25
+        K[i + 1, i] = 0.25
+
+N = np.trace(K) * 0.1
+BETA = 0.95
+LITTLE_S = 0.05
+U_CONST = 1.0 
+GAMMA_V_RATIO = 0.2
+draws = []
 t = 1
 swap_rate = 0
 tries = 0
 while True:
     chosen_one = random.choice([i for i in range(len(ensemble_E))])   
-    particle, u = ensemble_E[chosen_one
-                            ]
-    proposal = generate_params_dict()
+    particle, u = ensemble_E[chosen_one]
+    proposal, new_vec, reject = markov_update_params_dict(particle, K)
     agents, shares, centrality = run_agent_simulation(N_AGENTS, params_dict)
     proba_star = p_x_y(agents, shares, centrality, ALPHA)
     u_star = G_func(ensemble_P, proba_star)
     
-    proba_swap = min(1.0, np.exp(-1.0 * (u_star - u)) / np.exp(EPSILON))
+    proba_swap = min(1.0, np.exp((-1.0 * (u_star - u)) / EPSILON))
     tries += 1
-    if np.random.uniform() < proba_swap:
+    if np.random.uniform() < proba_swap and not(reject):
         swap_rate += 1
         ensemble_E[chosen_one] = (proposal, u_star)
 
-    EPSILON = t ** (0.1)
+    draws.append(new_vec)
     if t % 100 == 0:
+        cov = np.cov(np.array(draws).transpose())
+        draws = []
+        U = np.mean([G_func(ensemble_P, tup[1]) for tup in ensemble_E])
+        K = BETA * cov + LITTLE_S * np.trace(cov) * np.ones((len(params_dict), len(params_dict)))
+        EPSILON = U ** (4/3.0) * (GAMMA_V_RATIO ** (1/3.0)) + U_CONST * U * U
         print(swap_rate / tries)
-    if t % 1000 == 0:
-        pickle.dump(ensemble_E, open('ensemble_E_pwrlaw_cluster_{}.pkl'.format(str(t)), 'wb'))
+    if t % 100 == 0 or t % 5 == 0 and t < 75:
+        pickle.dump(ensemble_E, open('ensemble_E_{}_{}.pkl'.format(PICKLE_TITLE, str(t)), 'wb'))
     t += 1
-    if (swap_rate / tries) < 0.05 and tries > 20:
+    if (swap_rate / tries) < 0.01 and tries > 20:
         break
