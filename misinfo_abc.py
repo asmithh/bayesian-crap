@@ -132,8 +132,8 @@ def G_func(my_ensemble_P, x):
             
 
 N_AGENTS = 100
-ALPHA = 2.3
-EPSILON_INIT = 0.3
+ALPHA = 2.6
+EPSILON_INIT = 0.5
 rnd_info = []
 
 ensemble_P = []
